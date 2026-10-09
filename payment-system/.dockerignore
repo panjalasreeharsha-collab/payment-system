@@ -1,0 +1,13 @@
+.git
+.vscode
+.idea
+target
+**/target
+.env
+.env.*
+!.env.example
+application-secret.properties
+application-*-secret.properties
+**/application-secret.properties
+**/application-*-secret.properties
+*.log
