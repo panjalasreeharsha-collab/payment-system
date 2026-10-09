@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Wallet | payment-system</title>
+    <link rel="stylesheet" th:href="@{/styles.css}">
+</head>
+<body>
+<main class="shell">
+    <header class="topbar">
+        <a class="wordmark" th:href="@{/}"><span class="brand-mark">p</span> pocket / pay</a>
+        <span class="secure-label">DIGITAL WALLET</span>
+    </header>
+
+    <div class="notice notice-error" th:if="${error}" th:text="${error}" role="alert"></div>
+    <div class="notice notice-success" th:if="${success}" th:text="${success}" role="status"></div>
+
+    <section class="welcome" th:if="${user == null}">
+        <p class="eyebrow">YOUR MONEY, IN MOTION</p>
+        <h1>Set up your wallet.</h1>
+        <p class="intro">Create an account to start sending and receiving payments.</p>
+        <form class="form-stack register-form" th:action="@{/register}" method="post">
+            <label>Full name<input name="name" autocomplete="name" required maxlength="100"></label>
+            <label>Phone number<input name="phoneNumber" type="tel" autocomplete="tel" required maxlength="20"></label>
+            <label>UPI ID<input name="upiId" placeholder="name@bank" required maxlength="100"></label>
+            <label>Password<input name="password" type="password" autocomplete="new-password" minlength="8" required></label>
+            <button class="button button-dark" type="submit">Create wallet <span aria-hidden="true">→</span></button>
+        </form>
+    </section>
+
+    <div th:if="${user != null}">
+        <section class="overview">
+            <div>
+                <p class="eyebrow" th:text="${historyView} ? 'ACCOUNT ACTIVITY' : 'WALLET OVERVIEW'">WALLET OVERVIEW</p>
+                <h1 th:text="${historyView} ? 'Your transactions.' : |Good to see you, ${user.name}.|">Your wallet.</h1>
+                <p class="upi-line"><span class="online-dot"></span><span th:text="${user.upiId}">you@bank</span></p>
+            </div>
+            <div class="balance-block">
+                <span class="balance-label">AVAILABLE BALANCE</span>
+                <strong><span class="currency">₹</span><span th:text="${#numbers.formatDecimal(balance, 1, 2)}">0.00</span></strong>
+            </div>
+        </section>
+
+        <section class="actions" th:unless="${historyView}">
+            <article class="action-panel send-panel">
+                <div class="panel-heading"><span class="step-number">01</span><h2>Send money</h2></div>
+                <form class="form-stack" th:action="@{/send}" method="post">
+                    <input type="hidden" name="userId" th:value="${user.id}">
+                    <label>Recipient UPI ID<input name="recipientUpiId" placeholder="recipient@bank" required maxlength="100"></label>
+                    <label>Amount<input name="amount" type="number" min="0.01" step="0.01" placeholder="0.00" required></label>
+                    <button class="button button-dark" type="submit">Send payment <span aria-hidden="true">↗</span></button>
+                </form>
+            </article>
+            <article class="action-panel add-panel">
+                <div class="panel-heading"><span class="step-number">02</span><h2>Add funds</h2></div>
+                <p class="panel-copy">Top up your wallet balance. The amount is available immediately.</p>
+                <form class="form-stack" th:action="@{/add-funds}" method="post">
+                    <input type="hidden" name="userId" th:value="${user.id}">
+                    <label>Amount to add<input name="amount" type="number" min="0.01" step="0.01" placeholder="0.00" required></label>
+                    <button class="button button-accent" type="submit"><span aria-hidden="true">＋</span> Add money</button>
+                </form>
+            </article>
+        </section>
+
+        <section class="activity">
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">YOUR WALLET LEDGER</p>
+                    <h2 th:text="${historyView} ? 'Transaction history' : 'Recent activity'">Recent activity</h2>
+                </div>
+                <a class="text-link" th:if="${historyView}" th:href="@{/dashboard(userId=${user.id})}">Back to dashboard <span aria-hidden="true">→</span></a>
+                <a class="text-link" th:unless="${historyView}" th:href="@{/transactions(userId=${user.id})}">View all <span aria-hidden="true">→</span></a>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>PAYMENT</th><th>DATE</th><th class="amount-cell">AMOUNT</th><th>STATUS</th></tr></thead>
+                    <tbody>
+                    <tr th:each="transaction : ${transactions}">
+                        <td>
+                            <span class="transaction-direction" th:text="${transaction.senderUpiId == user.upiId} ? 'Sent to' : 'Received from'">Sent to</span>
+                            <span class="transaction-upi" th:text="${transaction.senderUpiId == user.upiId ? transaction.receiverUpiId : transaction.senderUpiId}">someone@bank</span>
+                        </td>
+                        <td class="date-cell" th:text="${transaction.timestamp}">2026-01-01</td>
+                        <td class="amount-cell" th:classappend="${transaction.senderUpiId == user.upiId} ? ' amount-out' : ' amount-in'">
+                            <span th:text="${transaction.senderUpiId == user.upiId} ? '−' : '+'">+</span>₹<span th:text="${#numbers.formatDecimal(transaction.amount, 1, 2)}">0.00</span>
+                        </td>
+                        <td><span class="status" th:classappend="${transaction.status.name() == 'SUCCESS'} ? ' status-success' : ' status-failed'" th:text="${transaction.status}">SUCCESS</span></td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(transactions)}"><td class="empty-state" colspan="4">No transactions yet. Your wallet activity will appear here.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
+    <footer class="footer"><span>payment-system</span><span>Payments made clear.</span></footer>
+</main>
+</body>
+</html>
